@@ -11,14 +11,15 @@ export const metadata: Metadata = { title: "Project Settings" };
 export default async function ProjectSettingsPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
+  const { projectId } = await params;
   const session = await auth();
   const orgId = (session?.user as { orgId?: string })?.orgId;
   if (!orgId) notFound();
 
   const project = await db.project.findFirst({
-    where: { id: params.projectId, orgId },
+    where: { id: projectId, orgId },
   });
   if (!project) notFound();
 

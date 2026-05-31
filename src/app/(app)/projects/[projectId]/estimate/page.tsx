@@ -10,15 +10,16 @@ export const metadata: Metadata = { title: "Estimate" };
 export default async function EstimatePage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
+  const { projectId } = await params;
   const session = await auth();
   const orgId = (session?.user as { orgId?: string })?.orgId;
   if (!orgId) notFound();
 
   const [project, rateItems] = await Promise.all([
     db.project.findFirst({
-      where: { id: params.projectId, orgId },
+      where: { id: projectId, orgId },
       include: { rateOverrides: true },
     }),
     db.rateItem.findMany({

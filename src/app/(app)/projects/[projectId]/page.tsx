@@ -27,13 +27,14 @@ const statusLabel: Record<ProjectStatus, string> = {
 export async function generateMetadata({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }): Promise<Metadata> {
+  const { projectId } = await params;
   const session = await auth();
   const orgId = (session?.user as { orgId?: string })?.orgId;
   if (!orgId) return {};
   const project = await db.project.findFirst({
-    where: { id: params.projectId, orgId },
+    where: { id: projectId, orgId },
     select: { name: true },
   });
   return { title: project?.name ?? "Project" };
@@ -42,14 +43,15 @@ export async function generateMetadata({
 export default async function ProjectPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
+  const { projectId } = await params;
   const session = await auth();
   const orgId = (session?.user as { orgId?: string })?.orgId;
   if (!orgId) notFound();
 
   const project = await db.project.findFirst({
-    where: { id: params.projectId, orgId },
+    where: { id: projectId, orgId },
     include: {
       _count: { select: { wbsItems: true } },
     },
