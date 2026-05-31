@@ -39,6 +39,36 @@ export default async function EstimatePage({
     orderBy: { sortOrder: "asc" },
   });
 
+  // Serialize Prisma Decimal fields to numbers before passing to client components
+  const serializedProject = {
+    ...project,
+    budget: project.budget != null ? Number(project.budget) : null,
+    contractAmount: project.contractAmount != null ? Number(project.contractAmount) : null,
+    overheadPct: Number(project.overheadPct),
+    profitPct: Number(project.profitPct),
+    vatPct: Number(project.vatPct),
+    rateOverrides: project.rateOverrides.map((ro) => ({
+      ...ro,
+      unitRate: Number(ro.unitRate),
+    })),
+  };
+
+  const serializedWbsItems = wbsItems.map((item) => ({
+    ...item,
+    quantity: item.quantity != null ? Number(item.quantity) : null,
+    variables: item.variables.map((v) => ({ ...v, value: Number(v.value) })),
+    lineItems: item.lineItems.map((li) => ({
+      ...li,
+      quantity: li.quantity != null ? Number(li.quantity) : null,
+      rateItem: { ...li.rateItem, unitRate: Number(li.rateItem.unitRate) },
+    })),
+  }));
+
+  const serializedRateItems = rateItems.map((ri) => ({
+    ...ri,
+    unitRate: Number(ri.unitRate),
+  }));
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Top breadcrumb */}
@@ -58,9 +88,9 @@ export default async function EstimatePage({
       </div>
 
       <EstimateShell
-        project={project}
-        initialWbsItems={wbsItems}
-        rateItems={rateItems}
+        project={serializedProject as unknown as typeof project & { rateOverrides: { rateItemId: string; unitRate: number }[] }}
+        initialWbsItems={serializedWbsItems as unknown as typeof wbsItems}
+        rateItems={serializedRateItems as unknown as typeof rateItems}
       />
     </div>
   );
