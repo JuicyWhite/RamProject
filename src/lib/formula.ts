@@ -137,15 +137,15 @@ export function evaluateFormula(
   formula: string,
   variables: Record<string, number>
 ): FormulaResult | FormulaError {
-  if (!formula.trim()) return { value: null as unknown as number, error: "Empty formula" };
+  if (!formula.trim()) return { value: null, error: "Empty formula" };
   try {
     const tokens = tokenize(formula);
     const fn = parser(tokens);
     const result = fn(variables);
-    if (!isFinite(result)) return { value: null as unknown as number, error: "Result is not finite" };
+    if (!isFinite(result)) return { value: null, error: "Result is not finite" };
     return { value: result, error: null };
   } catch (e) {
-    return { value: null as unknown as number, error: (e as Error).message };
+    return { value: null, error: (e as Error).message };
   }
 }
 
