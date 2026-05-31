@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+// ── Auth.js v5 required models ────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ── Core user & multi-tenant models ──────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  memberships OrgMembership[]
+  invitations Invitation[]    @relation("InvitationCreatedBy")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  plan      String   @default("free") // free | pro | enterprise
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members     OrgMembership[]
+  projects    Project[]
+  rateItems   RateItem[]
+  invitations Invitation[]
+}
+
+enum OrgRole {
+  OWNER
+  ESTIMATOR
+  VIEWER
+}
+
+model OrgMembership {
+  id       String   @id @default(cuid())
+  userId   String
+  orgId    String
+  role     OrgRole  @default(VIEWER)
+  joinedAt DateTime @default(now())
+
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+model Invitation {
+  id          String   @id @default(cuid())
+  orgId       String
+  email       String
+  role        OrgRole  @default(ESTIMATOR)
+  token       String   @unique @default(cuid())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy User         @relation("InvitationCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([orgId, email])
+  @@index([token])
+}
+
+// ── Projects ──────────────────────────────────────────────────────────────────
+
+enum ProjectStatus {
+  DRAFT
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum ContractType {
+  PRIVATE
+  GOVERNMENT
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  orgId       String
+  code        String?
+  name        String
+  client      String?
+  location    String?
+  region      String?       // DPWH region or administrative region
+  contractType ContractType @default(PRIVATE)
+  philgepsRef String?       // PhilGEPS reference number (gov projects)
+  permitNumber String?       // building/environmental permit
+  status      ProjectStatus @default(DRAFT)
+  description String?       @db.Text
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Decimal?      @db.Decimal(18, 2)  // client-approved budget
+  contractAmount Decimal?   @db.Decimal(18, 2)  // awarded contract amount
+  overheadPct Decimal       @default(0) @db.Decimal(5, 2)
+  profitPct   Decimal       @default(0) @db.Decimal(5, 2)
+  vatPct      Decimal       @default(12) @db.Decimal(5, 2) // PH VAT default 12%
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  org           Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  wbsItems      WbsItem[]
+  rateOverrides ProjectRateOverride[]
+
+  @@index([orgId])
+  @@index([status])
+}
+
+// ── Work Breakdown Structure ──────────────────────────────────────────────────
+
+model WbsItem {
+  id          String   @id @default(cuid())
+  projectId   String
+  parentId    String?
+  wbsCode     String?            // e.g. "1.2.3" — auto-maintained
+  description String
+  unit        String?            // m, m2, m3, kg, pcs, ls, set, day, hr...
+  formula     String?  @db.Text  // e.g. "L * W * H" — evaluated client-side
+  quantity    Decimal? @db.Decimal(18, 4)
+  remarks     String?  @db.Text
+  isGroup     Boolean  @default(false)
+  isLocked    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent    WbsItem?   @relation("WbsTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  WbsItem[]  @relation("WbsTree")
+  variables WbsVariable[]
+  lineItems EstimateLineItem[]
+
+  @@index([projectId])
+  @@index([parentId])
+}
+
+model WbsVariable {
+  id        String   @id @default(cuid())
+  wbsItemId String
+  name      String   // e.g. "L", "Width", "Height" — used in formula
+  label     String?  // human-readable label
+  value     Decimal  @db.Decimal(18, 4)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  wbsItem WbsItem @relation(fields: [wbsItemId], references: [id], onDelete: Cascade)
+
+  @@unique([wbsItemId, name])
+  @@index([wbsItemId])
+}
+
+// ── Rate Library ──────────────────────────────────────────────────────────────
+
+enum RateCategory {
+  LABOR
+  MATERIAL
+  EQUIPMENT
+  SUBCONTRACT
+  OTHER
+}
+
+model RateItem {
+  id          String       @id @default(cuid())
+  orgId       String
+  code        String?
+  description String
+  category    RateCategory
+  unit        String
+  unitRate    Decimal      @db.Decimal(18, 4)
+  isActive    Boolean      @default(true)
+  notes       String?      @db.Text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  org       Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  overrides ProjectRateOverride[]
+  lineItems EstimateLineItem[]
+
+  @@index([orgId])
+  @@index([category])
+}
+
+model ProjectRateOverride {
+  id         String   @id @default(cuid())
+  projectId  String
+  rateItemId String
+  unitRate   Decimal  @db.Decimal(18, 4)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rateItem RateItem @relation(fields: [rateItemId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, rateItemId])
+  @@index([projectId])
+}
+
+// ── Estimate Line Items ───────────────────────────────────────────────────────
+
+model EstimateLineItem {
+  id         String   @id @default(cuid())
+  wbsItemId  String
+  rateItemId String
+  quantity   Decimal? @db.Decimal(18, 4) // null = inherit WbsItem.quantity
+  sortOrder  Int      @default(0)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  wbsItem  WbsItem  @relation(fields: [wbsItemId], references: [id], onDelete: Cascade)
+  rateItem RateItem @relation(fields: [rateItemId], references: [id])
+
+  @@index([wbsItemId])
+  @@index([rateItemId])
+}
