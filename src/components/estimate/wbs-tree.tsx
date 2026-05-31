@@ -423,7 +423,7 @@ function WbsTreeRows(props: WbsTreeProps) {
   return (
     <>
       {props.items.map((item) => (
-        <WbsRow key={item.id} item={item} {...props} />
+        <WbsRow key={item.id} item={item} {...props} depth={props.depth ?? 0} />
       ))}
     </>
   );
