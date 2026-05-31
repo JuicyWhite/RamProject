@@ -20,13 +20,11 @@ interface TopbarProps {
 }
 
 export function Topbar({ userName, userEmail, breadcrumb }: TopbarProps) {
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
+  const [dark, setDark] = useState(() => {
+    if (typeof window === "undefined") return false;
     const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setDark(stored === "dark" || (!stored && prefersDark));
-  }, []);
+    return stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);

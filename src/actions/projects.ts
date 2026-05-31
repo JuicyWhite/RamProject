@@ -69,29 +69,20 @@ export async function updateProject(
   const { orgId } = await requireOrgAccess("ESTIMATOR");
   const data = UpdateProjectSchema.parse(input);
 
-  const existing = await db.project.findFirst({
+  const result = await db.project.updateMany({
     where: { id: projectId, orgId },
-  });
-  if (!existing) throw new Error("Project not found");
-
-  const updated = await db.project.update({
-    where: { id: projectId },
     data,
   });
+  if (result.count === 0) throw new Error("Project not found");
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath("/projects");
-  return updated;
 }
 
 export async function deleteProject(projectId: string) {
   const { orgId } = await requireOrgAccess("OWNER");
-  const existing = await db.project.findFirst({
-    where: { id: projectId, orgId },
-  });
-  if (!existing) throw new Error("Project not found");
-
-  await db.project.delete({ where: { id: projectId } });
+  const result = await db.project.deleteMany({ where: { id: projectId, orgId } });
+  if (result.count === 0) throw new Error("Project not found");
   revalidatePath("/projects");
 }
 

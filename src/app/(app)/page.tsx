@@ -19,7 +19,15 @@ export default async function DashboardPage() {
     where: { orgId, status: { not: "ARCHIVED" } },
     orderBy: { updatedAt: "desc" },
     take: 10,
-    include: { _count: { select: { wbsItems: true } } },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      client: true,
+      status: true,
+      budget: true,
+      _count: { select: { wbsItems: true } },
+    },
   });
 
   const statusCount = projects.reduce<Record<string, number>>((acc, p) => {

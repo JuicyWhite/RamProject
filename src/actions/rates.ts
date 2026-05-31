@@ -109,17 +109,17 @@ export async function upsertRateOverride(input: {
 // ── Estimate Line Items ───────────────────────────────────────────────────────
 
 export async function addEstimateLineItem(input: CreateEstimateLineItemInput) {
-  const { orgId } = await requireOrgAccess("ESTIMATOR");
   const data = CreateEstimateLineItemSchema.parse(input);
 
-  const wbsItem = await db.wbsItem.findUnique({
-    where: { id: data.wbsItemId },
-    select: { projectId: true },
-  });
+  const [{ orgId }, wbsItem] = await Promise.all([
+    requireOrgAccess("ESTIMATOR"),
+    db.wbsItem.findUnique({ where: { id: data.wbsItemId }, select: { projectId: true } }),
+  ]);
   if (!wbsItem) throw new Error("WBS item not found");
 
   const project = await db.project.findFirst({
     where: { id: wbsItem.projectId, orgId },
+    select: { id: true },
   });
   if (!project) throw new Error("Project not found");
 
@@ -136,17 +136,20 @@ export async function updateEstimateLineItem(
   id: string,
   input: { quantity?: number | null; notes?: string | null }
 ) {
-  const { orgId } = await requireOrgAccess("ESTIMATOR");
   const data = UpdateEstimateLineItemSchema.parse(input);
 
-  const existing = await db.estimateLineItem.findUnique({
-    where: { id },
-    include: { wbsItem: { select: { projectId: true } } },
-  });
+  const [{ orgId }, existing] = await Promise.all([
+    requireOrgAccess("ESTIMATOR"),
+    db.estimateLineItem.findUnique({
+      where: { id },
+      include: { wbsItem: { select: { projectId: true } } },
+    }),
+  ]);
   if (!existing) throw new Error("Line item not found");
 
   const project = await db.project.findFirst({
     where: { id: existing.wbsItem.projectId, orgId },
+    select: { id: true },
   });
   if (!project) throw new Error("Not authorized");
 
@@ -156,16 +159,18 @@ export async function updateEstimateLineItem(
 }
 
 export async function deleteEstimateLineItem(id: string) {
-  const { orgId } = await requireOrgAccess("ESTIMATOR");
-
-  const existing = await db.estimateLineItem.findUnique({
-    where: { id },
-    include: { wbsItem: { select: { projectId: true } } },
-  });
+  const [{ orgId }, existing] = await Promise.all([
+    requireOrgAccess("ESTIMATOR"),
+    db.estimateLineItem.findUnique({
+      where: { id },
+      include: { wbsItem: { select: { projectId: true } } },
+    }),
+  ]);
   if (!existing) throw new Error("Line item not found");
 
   const project = await db.project.findFirst({
     where: { id: existing.wbsItem.projectId, orgId },
+    select: { id: true },
   });
   if (!project) throw new Error("Not authorized");
 

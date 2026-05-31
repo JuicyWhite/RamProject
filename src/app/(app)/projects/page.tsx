@@ -34,7 +34,16 @@ export default async function ProjectsPage() {
   const projects = await db.project.findMany({
     where: { orgId },
     orderBy: { updatedAt: "desc" },
-    include: { _count: { select: { wbsItems: true } } },
+    select: {
+      id: true,
+      name: true,
+      code: true,
+      client: true,
+      location: true,
+      status: true,
+      budget: true,
+      _count: { select: { wbsItems: true } },
+    },
   });
 
   return (
