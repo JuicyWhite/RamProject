@@ -33,4 +33,4 @@ export const UpdateEstimateLineItemSchema = CreateEstimateLineItemSchema.omit({
 
 export type CreateRateItemInput = z.infer<typeof CreateRateItemSchema>;
 export type UpdateRateItemInput = z.infer<typeof UpdateRateItemSchema>;
-export type CreateEstimateLineItemInput = z.infer<typeof CreateEstimateLineItemSchema>;
+export type CreateEstimateLineItemInput = z.input<typeof CreateEstimateLineItemSchema>;
