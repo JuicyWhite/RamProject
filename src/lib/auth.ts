@@ -14,17 +14,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // The custom sendVerificationRequest below handles actual delivery.
       server: process.env.EMAIL_SERVER || "smtp://0.0.0.0:0",
       from: process.env.EMAIL_FROM || "Ascend <noreply@localhost>",
-      sendVerificationRequest: async ({ identifier: email, url, provider }) => {
-        if (!process.env.EMAIL_SERVER) {
-          // Dev mode: print the magic link to the terminal
+      sendVerificationRequest: async ({ identifier: email, url }) => {
+        if (!process.env.SMTP_PASSWORD) {
           console.log(`\n[auth] Magic sign-in link for ${email}:\n  ${url}\n`);
           return;
         }
         const { createTransport } = await import("nodemailer");
-        const transport = createTransport(provider.server as string);
+        const transport = createTransport({
+          host: "smtp-relay.brevo.com",
+          port: 587,
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASSWORD,
+          },
+        });
         await transport.sendMail({
           to: email,
-          from: provider.from,
+          from: process.env.EMAIL_FROM,
           subject: "Sign in to Ascend",
           text: `Sign in with this link:\n${url}`,
           html: `<p>Click to sign in to Ascend:</p><p><a href="${url}">${url}</a></p>`,
