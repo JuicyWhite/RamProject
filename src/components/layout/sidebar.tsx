@@ -9,6 +9,7 @@ import {
   Settings,
   ChevronRight,
   HardHat,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,11 @@ const navItems = [
     href: "/rates",
     label: "Rate Library",
     icon: Library,
+  },
+  {
+    href: "/tools",
+    label: "Eng. Tools",
+    icon: Wrench,
   },
   {
     href: "/settings",

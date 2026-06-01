@@ -71,6 +71,8 @@ model User {
   checklistItems   ChecklistItem[]   @relation("ChecklistCreatedBy")
   tasks            ProjectTask[]     @relation("TaskCreatedBy")
   documents        ProjectDocument[] @relation("DocCreatedBy")
+  workers          Worker[]          @relation("WorkerCreatedBy")
+  materials        MaterialItem[]    @relation("MaterialCreatedBy")
 }
 
 model Organization {
@@ -176,9 +178,54 @@ model Project {
   checklistItems   ChecklistItem[]
   tasks            ProjectTask[]
   documents        ProjectDocument[]
+  workers          Worker[]
+  materials        MaterialItem[]
 
   @@index([orgId])
   @@index([status])
+}
+
+// ── Workers / Roster ──────────────────────────────────────────────────────────
+
+model Worker {
+  id        String   @id @default(cuid())
+  projectId String
+  name      String
+  role      String?
+  dailyRate Decimal? @db.Decimal(18, 2)
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdById String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("WorkerCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
+}
+
+// ── Materials / Inventory ─────────────────────────────────────────────────────
+
+model MaterialItem {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  unit        String?
+  quantity    Decimal  @default(0) @db.Decimal(18, 4)
+  minQuantity Decimal? @db.Decimal(18, 4)
+  unitCost    Decimal? @db.Decimal(18, 2)
+  location    String?
+  isOnBuyList Boolean  @default(false)
+  qtyNeeded   Decimal? @db.Decimal(18, 4)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("MaterialCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
 }
 
 // ── Document Control ──────────────────────────────────────────────────────────

@@ -6,8 +6,9 @@ import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity } from "lucide-react";
+import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity, Users, Package } from "lucide-react";
 import type { ProjectStatus } from "@prisma/client";
+import { StatusChanger } from "@/components/projects/status-changer";
 
 const statusVariant: Record<ProjectStatus, string> = {
   DRAFT: "draft",
@@ -104,9 +105,7 @@ export default async function ProjectPage({
                 {project.code}
               </span>
             )}
-            <Badge variant={statusVariant[project.status] as never}>
-              {statusLabel[project.status]}
-            </Badge>
+            <StatusChanger projectId={project.id} currentStatus={project.status} />
             <Badge variant="outline">
               {project.contractType === "GOVERNMENT" ? "Gov't" : "Private"}
             </Badge>
@@ -219,6 +218,18 @@ export default async function ProjectPage({
             label: "Safety Incidents",
             desc: "Log and track safety incidents on site",
             icon: ShieldAlert,
+          },
+          {
+            href: `/projects/${project.id}/workers`,
+            label: "Workers & Roster",
+            desc: "Manage site workers and roles",
+            icon: Users,
+          },
+          {
+            href: `/projects/${project.id}/materials`,
+            label: "Materials & Inventory",
+            desc: "Track inventory and buy list",
+            icon: Package,
           },
           {
             href: `/projects/${project.id}/documents`,

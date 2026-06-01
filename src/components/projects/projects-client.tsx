@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Plus, Search } from "lucide-react";
 import { NewProjectDialog } from "./new-project-dialog";
 import type { ProjectStatus } from "@prisma/client";
 
@@ -41,8 +41,19 @@ export function ProjectsClient({ projects }: { projects: Project[] }) {
   const [filter, setFilter] = useState("all");
   const [showNew, setShowNew] = useState(false);
 
+  const [search, setSearch] = useState("");
+
   const filtered = useMemo(() => {
     let list = [...projects];
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.client ?? "").toLowerCase().includes(q) ||
+        (p.code ?? "").toLowerCase().includes(q) ||
+        (p.location ?? "").toLowerCase().includes(q)
+      );
+    }
     if (filter !== "all") {
       list = list.filter((p) => p.status === filter.toUpperCase());
     }
@@ -50,7 +61,7 @@ export function ProjectsClient({ projects }: { projects: Project[] }) {
       list.sort((a, b) => a.name.localeCompare(b.name));
     }
     return list;
-  }, [projects, sort, filter]);
+  }, [projects, sort, filter, search]);
 
   return (
     <div className="space-y-4">
@@ -65,6 +76,18 @@ export function ProjectsClient({ projects }: { projects: Project[] }) {
           <Plus className="h-3.5 w-3.5" aria-hidden />
           New Project
         </Button>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        <input
+          type="search"
+          placeholder="Search by name, client, code, location…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full sm:w-80 pl-9 pr-3 py-1.5 text-sm border border-border rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+        />
       </div>
 
       {/* Sort & Filter bar */}
