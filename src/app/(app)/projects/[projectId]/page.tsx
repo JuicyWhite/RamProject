@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare } from "lucide-react";
+import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity } from "lucide-react";
 import type { ProjectStatus } from "@prisma/client";
 
 const statusVariant: Record<ProjectStatus, string> = {
@@ -219,6 +219,18 @@ export default async function ProjectPage({
             label: "Safety Incidents",
             desc: "Log and track safety incidents on site",
             icon: ShieldAlert,
+          },
+          {
+            href: `/projects/${project.id}/documents`,
+            label: "Document Control",
+            desc: "Track Submittals, RFIs, and Transmittals",
+            icon: FolderOpen,
+          },
+          {
+            href: `/projects/${project.id}/activity`,
+            label: "Recent Activity",
+            desc: "A log of all recent actions on this project",
+            icon: Activity,
           },
           {
             href: `/projects/${project.id}/settings`,

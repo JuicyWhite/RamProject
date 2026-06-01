@@ -61,15 +61,16 @@ model User {
   accounts         Account[]
   sessions         Session[]
   memberships      OrgMembership[]
-  invitations      Invitation[]     @relation("InvitationCreatedBy")
-  diaryEntries     DailyDiary[]     @relation("DiaryCreatedBy")
-  notes            ProjectNote[]    @relation("NoteCreatedBy")
-  financialEntries FinancialEntry[] @relation("FinancialEntryCreatedBy")
-  inspections      Inspection[]     @relation("InspectionCreatedBy")
-  issues           ProjectIssue[]   @relation("IssueCreatedBy")
-  safetyIncidents  SafetyIncident[] @relation("IncidentCreatedBy")
-  checklistItems   ChecklistItem[]  @relation("ChecklistCreatedBy")
-  tasks            ProjectTask[]    @relation("TaskCreatedBy")
+  invitations      Invitation[]      @relation("InvitationCreatedBy")
+  diaryEntries     DailyDiary[]      @relation("DiaryCreatedBy")
+  notes            ProjectNote[]     @relation("NoteCreatedBy")
+  financialEntries FinancialEntry[]  @relation("FinancialEntryCreatedBy")
+  inspections      Inspection[]      @relation("InspectionCreatedBy")
+  issues           ProjectIssue[]    @relation("IssueCreatedBy")
+  safetyIncidents  SafetyIncident[]  @relation("IncidentCreatedBy")
+  checklistItems   ChecklistItem[]   @relation("ChecklistCreatedBy")
+  tasks            ProjectTask[]     @relation("TaskCreatedBy")
+  documents        ProjectDocument[] @relation("DocCreatedBy")
 }
 
 model Organization {
@@ -174,9 +175,48 @@ model Project {
   safetyIncidents  SafetyIncident[]
   checklistItems   ChecklistItem[]
   tasks            ProjectTask[]
+  documents        ProjectDocument[]
 
   @@index([orgId])
   @@index([status])
+}
+
+// ── Document Control ──────────────────────────────────────────────────────────
+
+enum DocType {
+  SUBMITTAL
+  RFI
+  TRANSMITTAL
+}
+
+enum DocStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+model ProjectDocument {
+  id          String    @id @default(cuid())
+  projectId   String
+  type        DocType
+  number      String?
+  title       String
+  description String?   @db.Text
+  from        String?
+  to          String?
+  date        DateTime  @db.Date
+  status      DocStatus @default(PENDING)
+  response    String?   @db.Text
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("DocCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([type])
 }
 
 // ── Safety Incidents ──────────────────────────────────────────────────────────
