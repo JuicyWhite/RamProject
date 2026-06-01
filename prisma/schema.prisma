@@ -58,21 +58,27 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts         Account[]
-  sessions         Session[]
-  memberships      OrgMembership[]
-  invitations      Invitation[]      @relation("InvitationCreatedBy")
-  diaryEntries     DailyDiary[]      @relation("DiaryCreatedBy")
-  notes            ProjectNote[]     @relation("NoteCreatedBy")
-  financialEntries FinancialEntry[]  @relation("FinancialEntryCreatedBy")
-  inspections      Inspection[]      @relation("InspectionCreatedBy")
-  issues           ProjectIssue[]    @relation("IssueCreatedBy")
-  safetyIncidents  SafetyIncident[]  @relation("IncidentCreatedBy")
-  checklistItems   ChecklistItem[]   @relation("ChecklistCreatedBy")
-  tasks            ProjectTask[]     @relation("TaskCreatedBy")
-  documents        ProjectDocument[] @relation("DocCreatedBy")
-  workers          Worker[]          @relation("WorkerCreatedBy")
-  materials        MaterialItem[]    @relation("MaterialCreatedBy")
+  accounts            Account[]
+  sessions            Session[]
+  memberships         OrgMembership[]
+  invitations         Invitation[]        @relation("InvitationCreatedBy")
+  diaryEntries        DailyDiary[]        @relation("DiaryCreatedBy")
+  notes               ProjectNote[]       @relation("NoteCreatedBy")
+  financialEntries    FinancialEntry[]    @relation("FinancialEntryCreatedBy")
+  inspections         Inspection[]        @relation("InspectionCreatedBy")
+  issues              ProjectIssue[]      @relation("IssueCreatedBy")
+  safetyIncidents     SafetyIncident[]    @relation("IncidentCreatedBy")
+  checklistItems      ChecklistItem[]     @relation("ChecklistCreatedBy")
+  tasks               ProjectTask[]       @relation("TaskCreatedBy")
+  documents           ProjectDocument[]   @relation("DocCreatedBy")
+  workers             Worker[]            @relation("WorkerCreatedBy")
+  materials           MaterialItem[]      @relation("MaterialCreatedBy")
+  siteReports         SiteReport[]        @relation("SiteReportCreatedBy")
+  billingStatements   BillingStatement[]  @relation("BillingCreatedBy")
+  sitePhotos          SitePhoto[]         @relation("PhotoCreatedBy")
+  subcontractors      Subcontractor[]     @relation("SubcontractorCreatedBy")
+  materialDeliveries  MaterialDelivery[]  @relation("DeliveryCreatedBy")
+  teamMembers         ProjectTeamMember[] @relation("TeamMemberCreatedBy")
 }
 
 model Organization {
@@ -166,20 +172,26 @@ model Project {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  org              Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  wbsItems         WbsItem[]
-  rateOverrides    ProjectRateOverride[]
-  diaryEntries     DailyDiary[]
-  notes            ProjectNote[]
-  financialEntries FinancialEntry[]
-  inspections      Inspection[]
-  issues           ProjectIssue[]
-  safetyIncidents  SafetyIncident[]
-  checklistItems   ChecklistItem[]
-  tasks            ProjectTask[]
-  documents        ProjectDocument[]
-  workers          Worker[]
-  materials        MaterialItem[]
+  org                 Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  wbsItems            WbsItem[]
+  rateOverrides       ProjectRateOverride[]
+  diaryEntries        DailyDiary[]
+  notes               ProjectNote[]
+  financialEntries    FinancialEntry[]
+  inspections         Inspection[]
+  issues              ProjectIssue[]
+  safetyIncidents     SafetyIncident[]
+  checklistItems      ChecklistItem[]
+  tasks               ProjectTask[]
+  documents           ProjectDocument[]
+  workers             Worker[]
+  materials           MaterialItem[]
+  siteReports         SiteReport[]
+  billingStatements   BillingStatement[]
+  sitePhotos          SitePhoto[]
+  subcontractors      Subcontractor[]
+  materialDeliveries  MaterialDelivery[]
+  teamMembers         ProjectTeamMember[]
 
   @@index([orgId])
   @@index([status])
@@ -574,4 +586,171 @@ model EstimateLineItem {
 
   @@index([wbsItemId])
   @@index([rateItemId])
+}
+
+// ── Site Reports ──────────────────────────────────────────────────────────────
+
+model SiteReport {
+  id          String   @id @default(cuid())
+  projectId   String
+  date        DateTime @db.Date
+  weather     String?
+  temperature String?
+  manpower    Int?
+  equipment   String?  @db.Text
+  workDone    String   @db.Text
+  materials   String?  @db.Text
+  visitors    String?
+  issues      String?  @db.Text
+  notes       String?  @db.Text
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("SiteReportCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([projectId, date])
+  @@index([projectId])
+}
+
+// ── Progress Billing ──────────────────────────────────────────────────────────
+
+enum BillingStatus {
+  DRAFT
+  SENT
+  PAID
+  CANCELLED
+}
+
+model BillingStatement {
+  id          String        @id @default(cuid())
+  projectId   String
+  number      String?
+  periodStart DateTime?     @db.Date
+  periodEnd   DateTime?     @db.Date
+  date        DateTime      @db.Date
+  amount      Decimal       @db.Decimal(18, 2)
+  paidAmount  Decimal       @default(0) @db.Decimal(18, 2)
+  status      BillingStatus @default(DRAFT)
+  notes       String?       @db.Text
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("BillingCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
+}
+
+// ── Photo Log ─────────────────────────────────────────────────────────────────
+
+enum PhotoCategory {
+  PROGRESS
+  DEFECT
+  AS_BUILT
+  SAFETY
+  OTHER
+}
+
+model SitePhoto {
+  id          String        @id @default(cuid())
+  projectId   String
+  url         String
+  caption     String?
+  category    PhotoCategory @default(PROGRESS)
+  location    String?
+  takenAt     DateTime      @db.Date
+  createdById String
+  createdAt   DateTime      @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("PhotoCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([category])
+}
+
+// ── Subcontractors ────────────────────────────────────────────────────────────
+
+enum SubcontractorStatus {
+  ACTIVE
+  COMPLETED
+  ON_HOLD
+  TERMINATED
+}
+
+model Subcontractor {
+  id            String              @id @default(cuid())
+  projectId     String
+  company       String
+  trade         String?
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  contractValue Decimal?            @db.Decimal(18, 2)
+  paidAmount    Decimal             @default(0) @db.Decimal(18, 2)
+  status        SubcontractorStatus @default(ACTIVE)
+  notes         String?             @db.Text
+  createdById   String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("SubcontractorCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
+}
+
+// ── Material Deliveries ───────────────────────────────────────────────────────
+
+model MaterialDelivery {
+  id           String   @id @default(cuid())
+  projectId    String
+  supplier     String
+  material     String
+  quantity     Decimal  @db.Decimal(18, 4)
+  unit         String?
+  deliveryDate DateTime @db.Date
+  receivedBy   String?
+  drNumber     String?
+  notes        String?  @db.Text
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("DeliveryCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
+}
+
+// ── Project Team Members ──────────────────────────────────────────────────────
+
+enum TeamRole {
+  PROJECT_MANAGER
+  ENGINEER
+  FOREMAN
+  SUPERVISOR
+  SAFETY_OFFICER
+  INSPECTOR
+  OTHER
+}
+
+model ProjectTeamMember {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  role        TeamRole @default(OTHER)
+  email       String?
+  phone       String?
+  company     String?
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("TeamMemberCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
 }

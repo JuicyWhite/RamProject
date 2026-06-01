@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity, Users, Package } from "lucide-react";
+import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity, Users, Package, ClipboardList, ReceiptText, Camera, HardHat, Truck, UserCheck, Printer } from "lucide-react";
 import type { ProjectStatus } from "@prisma/client";
 import { StatusChanger } from "@/components/projects/status-changer";
 
@@ -128,6 +128,12 @@ export default async function ProjectPage({
         </div>
         <div className="flex gap-2 shrink-0">
           <Button asChild size="sm" variant="outline">
+            <Link href={`/projects/${project.id}/report`}>
+              <Printer className="h-3.5 w-3.5" aria-hidden />
+              Report
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
             <Link href={`/projects/${project.id}/settings`}>
               <Settings className="h-3.5 w-3.5" aria-hidden />
               Settings
@@ -236,6 +242,42 @@ export default async function ProjectPage({
             label: "Document Control",
             desc: "Track Submittals, RFIs, and Transmittals",
             icon: FolderOpen,
+          },
+          {
+            href: `/projects/${project.id}/site-reports`,
+            label: "Site Reports",
+            desc: "Daily site reports with weather, manpower, and work done",
+            icon: ClipboardList,
+          },
+          {
+            href: `/projects/${project.id}/billing`,
+            label: "Progress Billing",
+            desc: "Track billing statements and payment status",
+            icon: ReceiptText,
+          },
+          {
+            href: `/projects/${project.id}/photos`,
+            label: "Photo Log",
+            desc: "Site photos organized by category and date",
+            icon: Camera,
+          },
+          {
+            href: `/projects/${project.id}/subcontractors`,
+            label: "Subcontractors",
+            desc: "Manage subcontractors, contract values, and payments",
+            icon: HardHat,
+          },
+          {
+            href: `/projects/${project.id}/deliveries`,
+            label: "Material Deliveries",
+            desc: "Log supplier deliveries and track received materials",
+            icon: Truck,
+          },
+          {
+            href: `/projects/${project.id}/team`,
+            label: "Project Team",
+            desc: "Project team members and their roles",
+            icon: UserCheck,
           },
           {
             href: `/projects/${project.id}/activity`,
