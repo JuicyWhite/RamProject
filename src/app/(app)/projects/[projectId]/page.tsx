@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity, Users, Package, ClipboardList, ReceiptText, Camera, HardHat, Truck, UserCheck, Printer } from "lucide-react";
+import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity, Users, Package, ClipboardList, ReceiptText, Camera, HardHat, Truck, UserCheck, Printer, ListChecks, Clock, NotebookPen } from "lucide-react";
 import type { ProjectStatus } from "@prisma/client";
 import { StatusChanger } from "@/components/projects/status-changer";
 
@@ -232,6 +232,12 @@ export default async function ProjectPage({
             icon: Users,
           },
           {
+            href: `/projects/${project.id}/timesheet`,
+            label: "Timesheet & Payroll",
+            desc: "Log daily hours and compute worker payroll",
+            icon: Clock,
+          },
+          {
             href: `/projects/${project.id}/materials`,
             label: "Materials & Inventory",
             desc: "Track inventory and buy list",
@@ -278,6 +284,18 @@ export default async function ProjectPage({
             label: "Project Team",
             desc: "Project team members and their roles",
             icon: UserCheck,
+          },
+          {
+            href: `/projects/${project.id}/meetings`,
+            label: "Meeting Minutes",
+            desc: "Log project meetings, decisions, and action items.",
+            icon: NotebookPen,
+          },
+          {
+            href: `/projects/${project.id}/punch-list`,
+            label: "Punch List",
+            desc: "Track pre-completion deficiency items and close them out",
+            icon: ListChecks,
           },
           {
             href: `/projects/${project.id}/activity`,

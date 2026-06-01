@@ -79,6 +79,11 @@ model User {
   subcontractors      Subcontractor[]     @relation("SubcontractorCreatedBy")
   materialDeliveries  MaterialDelivery[]  @relation("DeliveryCreatedBy")
   teamMembers         ProjectTeamMember[] @relation("TeamMemberCreatedBy")
+  timesheetEntries    TimesheetEntry[]    @relation("TimesheetCreatedBy")
+  meetings            Meeting[]           @relation("MeetingCreatedBy")
+  punchListItems      PunchListItem[]     @relation("PunchListCreatedBy")
+  equipment           Equipment[]         @relation("EquipmentCreatedBy")
+  equipmentLogs       EquipmentLog[]      @relation("EquipmentLogCreatedBy")
 }
 
 model Organization {
@@ -94,6 +99,7 @@ model Organization {
   projects    Project[]
   rateItems   RateItem[]
   invitations Invitation[]
+  equipment   Equipment[]
 }
 
 enum OrgRole {
@@ -192,6 +198,10 @@ model Project {
   subcontractors      Subcontractor[]
   materialDeliveries  MaterialDelivery[]
   teamMembers         ProjectTeamMember[]
+  timesheetEntries    TimesheetEntry[]
+  meetings            Meeting[]
+  punchListItems      PunchListItem[]
+  equipmentLogs       EquipmentLog[]
 
   @@index([orgId])
   @@index([status])
@@ -211,8 +221,9 @@ model Worker {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  createdBy User    @relation("WorkerCreatedBy", fields: [createdById], references: [id])
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy        User             @relation("WorkerCreatedBy", fields: [createdById], references: [id])
+  timesheetEntries TimesheetEntry[]
 
   @@index([projectId])
 }
@@ -752,5 +763,153 @@ model ProjectTeamMember {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdBy User    @relation("TeamMemberCreatedBy", fields: [createdById], references: [id])
 
+  @@index([projectId])
+}
+
+// ── Timesheet ─────────────────────────────────────────────────────────────────
+
+model TimesheetEntry {
+  id          String   @id @default(cuid())
+  projectId   String
+  workerId    String
+  date        DateTime @db.Date
+  hoursWorked Decimal  @default(8) @db.Decimal(5, 2)
+  overtime    Decimal  @default(0) @db.Decimal(5, 2)
+  notes       String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  worker    Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("TimesheetCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([workerId, date])
+  @@index([projectId])
+  @@index([workerId])
+}
+
+// ── Meeting Minutes ───────────────────────────────────────────────────────────
+
+model Meeting {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  date        DateTime @db.Date
+  location    String?
+  facilitator String?
+  attendees   String?  @db.Text
+  agenda      String?  @db.Text
+  minutes     String?  @db.Text
+  decisions   String?  @db.Text
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy   User                @relation("MeetingCreatedBy", fields: [createdById], references: [id])
+  actionItems MeetingActionItem[]
+
+  @@index([projectId])
+}
+
+model MeetingActionItem {
+  id          String    @id @default(cuid())
+  meetingId   String
+  description String
+  assignee    String?
+  dueDate     DateTime? @db.Date
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId])
+}
+
+// ── Punch List ────────────────────────────────────────────────────────────────
+
+enum PunchStatus {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+enum PunchPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+model PunchListItem {
+  id          String        @id @default(cuid())
+  projectId   String
+  description String
+  location    String?
+  assignee    String?
+  dueDate     DateTime?     @db.Date
+  status      PunchStatus   @default(OPEN)
+  priority    PunchPriority @default(MEDIUM)
+  closedAt    DateTime?
+  notes       String?       @db.Text
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("PunchListCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([status])
+}
+
+// ── Equipment ─────────────────────────────────────────────────────────────────
+
+enum EquipmentStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  RETIRED
+}
+
+model Equipment {
+  id                  String          @id @default(cuid())
+  orgId               String
+  name                String
+  type                String?
+  plateOrSerial       String?
+  status              EquipmentStatus @default(AVAILABLE)
+  dailyRate           Decimal?        @db.Decimal(18, 2)
+  fuelType            String?
+  lastMaintenanceDate DateTime?       @db.Date
+  notes               String?         @db.Text
+  createdById         String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdBy User         @relation("EquipmentCreatedBy", fields: [createdById], references: [id])
+  logs      EquipmentLog[]
+
+  @@index([orgId])
+  @@index([status])
+}
+
+model EquipmentLog {
+  id           String   @id @default(cuid())
+  equipmentId  String
+  projectId    String?
+  date         DateTime @db.Date
+  hoursUsed    Decimal? @db.Decimal(8, 2)
+  fuelConsumed Decimal? @db.Decimal(8, 2)
+  operator     String?
+  notes        String?
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  createdBy User      @relation("EquipmentLogCreatedBy", fields: [createdById], references: [id])
+
+  @@index([equipmentId])
   @@index([projectId])
 }

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   HardHat,
   Wrench,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,11 @@ const navItems = [
     href: "/rates",
     label: "Rate Library",
     icon: Library,
+  },
+  {
+    href: "/equipment",
+    label: "Equipment",
+    icon: Truck,
   },
   {
     href: "/tools",
