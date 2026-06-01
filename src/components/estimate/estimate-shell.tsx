@@ -9,9 +9,15 @@ import { formatCurrency, formatNumber } from "@/lib/utils";
 import { createWbsItem, deleteWbsItem, reorderWbsItems } from "@/actions/wbs";
 import { addEstimateLineItem, deleteEstimateLineItem } from "@/actions/rates";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { WbsTree } from "./wbs-tree";
 import { TotalsBar } from "./totals-bar";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, FileText, Sheet } from "lucide-react";
 
 type RawWbsItem = WbsItem & {
   variables: WbsVariable[];
@@ -210,10 +216,42 @@ export function EstimateShell({
             Add Group
           </Button>
         </div>
-        <Button size="sm" variant="ghost" disabled>
-          <Download className="h-3.5 w-3.5" aria-hidden />
-          Export
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Download className="h-3.5 w-3.5" aria-hidden />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onSelect={async () => {
+                try {
+                  const { exportEstimateToPdf } = await import("@/lib/export/pdf");
+                  await exportEstimateToPdf(project as never, tree, totals, rateOverrideMap);
+                } catch {
+                  toast.error("Failed to export PDF.");
+                }
+              }}
+            >
+              <FileText className="h-3.5 w-3.5 mr-2" />
+              Export as PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={async () => {
+                try {
+                  const { exportEstimateToXlsx } = await import("@/lib/export/xlsx");
+                  await exportEstimateToXlsx(project as never, tree, totals, rateOverrideMap);
+                } catch {
+                  toast.error("Failed to export XLSX.");
+                }
+              }}
+            >
+              <Sheet className="h-3.5 w-3.5 mr-2" />
+              Export as Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Grid */}
