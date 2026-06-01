@@ -65,6 +65,8 @@ model User {
   diaryEntries     DailyDiary[]     @relation("DiaryCreatedBy")
   notes            ProjectNote[]    @relation("NoteCreatedBy")
   financialEntries FinancialEntry[] @relation("FinancialEntryCreatedBy")
+  inspections      Inspection[]     @relation("InspectionCreatedBy")
+  issues           ProjectIssue[]   @relation("IssueCreatedBy")
 }
 
 model Organization {
@@ -164,8 +166,70 @@ model Project {
   diaryEntries     DailyDiary[]
   notes            ProjectNote[]
   financialEntries FinancialEntry[]
+  inspections      Inspection[]
+  issues           ProjectIssue[]
 
   @@index([orgId])
+  @@index([status])
+}
+
+enum InspectionStatus {
+  OPEN
+  PASSED
+  FAILED
+}
+
+model Inspection {
+  id          String           @id @default(cuid())
+  projectId   String
+  title       String
+  location    String?
+  inspector   String?
+  date        DateTime         @db.Date
+  status      InspectionStatus @default(OPEN)
+  notes       String?          @db.Text
+  createdById String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  project   Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User         @relation("InspectionCreatedBy", fields: [createdById], references: [id])
+  issues    ProjectIssue[]
+
+  @@index([projectId])
+}
+
+enum IssueSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum IssueStatus {
+  OPEN
+  RESOLVED
+}
+
+model ProjectIssue {
+  id            String        @id @default(cuid())
+  projectId     String
+  inspectionId  String?
+  title         String
+  description   String?       @db.Text
+  severity      IssueSeverity @default(MEDIUM)
+  status        IssueStatus   @default(OPEN)
+  resolvedAt    DateTime?
+  resolvedNotes String?       @db.Text
+  createdById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  inspection Inspection? @relation(fields: [inspectionId], references: [id], onDelete: SetNull)
+  createdBy  User        @relation("IssueCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
   @@index([status])
 }
 

@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp } from "lucide-react";
+import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck } from "lucide-react";
 import type { ProjectStatus } from "@prisma/client";
 
 const statusVariant: Record<ProjectStatus, string> = {
@@ -183,6 +183,12 @@ export default async function ProjectPage({
             label: "Financial Tracker",
             desc: "Track additions and subtractions to the contract amount",
             icon: TrendingUp,
+          },
+          {
+            href: `/projects/${project.id}/inspections`,
+            label: "Inspections & Issues",
+            desc: "Log QC inspections and track open issues",
+            icon: ClipboardCheck,
           },
           {
             href: `/projects/${project.id}/diary`,
