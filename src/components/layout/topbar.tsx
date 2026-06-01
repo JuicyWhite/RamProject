@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useEffect, useState } from "react";
+import { NotificationBell } from "@/components/layout/notification-bell";
 
 interface TopbarProps {
   userName?: string | null;
@@ -46,6 +47,8 @@ export function Topbar({ userName, userEmail, breadcrumb }: TopbarProps) {
         >
           {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
         </Button>
+
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

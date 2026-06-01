@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity, Users, Package, ClipboardList, ReceiptText, Camera, HardHat, Truck, UserCheck, Printer, ListChecks, Clock, NotebookPen } from "lucide-react";
+import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote, TrendingUp, ClipboardCheck, ShieldAlert, CheckSquare, FolderOpen, Activity, Users, Package, ClipboardList, ReceiptText, Camera, HardHat, Truck, UserCheck, Printer, ListChecks, Clock, NotebookPen, FilePen, TriangleAlert } from "lucide-react";
 import type { ProjectStatus } from "@prisma/client";
 import { StatusChanger } from "@/components/projects/status-changer";
 
@@ -296,6 +296,18 @@ export default async function ProjectPage({
             label: "Punch List",
             desc: "Track pre-completion deficiency items and close them out",
             icon: ListChecks,
+          },
+          {
+            href: `/projects/${project.id}/change-orders`,
+            label: "Change Orders",
+            desc: "Track formal change orders, approval status, and contract impact",
+            icon: FilePen,
+          },
+          {
+            href: `/projects/${project.id}/risks`,
+            label: "Risk Register",
+            desc: "Identify, assess, and track project risks with mitigation plans",
+            icon: TriangleAlert,
           },
           {
             href: `/projects/${project.id}/activity`,
