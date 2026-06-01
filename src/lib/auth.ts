@@ -35,8 +35,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         if (!res.ok) {
           const body = await res.text();
+          console.error(`[auth] Brevo API error ${res.status}:`, body);
           throw new Error(`Brevo API error ${res.status}: ${body}`);
         }
+        console.log(`[auth] Magic link sent to ${email} via Brevo API`);
       },
     }),
     ...(process.env.AUTH_GOOGLE_ID
