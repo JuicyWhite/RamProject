@@ -15,27 +15,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       server: process.env.EMAIL_SERVER || "smtp://0.0.0.0:0",
       from: process.env.EMAIL_FROM || "Ascend <noreply@localhost>",
       sendVerificationRequest: async ({ identifier: email, url }) => {
-        if (!process.env.SMTP_PASSWORD) {
+        if (!process.env.BREVO_API_KEY) {
           console.log(`\n[auth] Magic sign-in link for ${email}:\n  ${url}\n`);
           return;
         }
-        const { createTransport } = await import("nodemailer");
-        const transport = createTransport({
-          host: "smtp-relay.brevo.com",
-          port: 587,
-          secure: false,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASSWORD,
+        const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+          method: "POST",
+          headers: {
+            "api-key": process.env.BREVO_API_KEY,
+            "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            sender: { name: "AscendyX", email: "info.ascendyx@gmail.com" },
+            to: [{ email }],
+            subject: "Sign in to Ascend",
+            htmlContent: `<p>Click to sign in to Ascend:</p><p><a href="${url}">${url}</a></p>`,
+            textContent: `Sign in with this link:\n${url}`,
+          }),
         });
-        await transport.sendMail({
-          to: email,
-          from: process.env.EMAIL_FROM,
-          subject: "Sign in to Ascend",
-          text: `Sign in with this link:\n${url}`,
-          html: `<p>Click to sign in to Ascend:</p><p><a href="${url}">${url}</a></p>`,
-        });
+        if (!res.ok) {
+          const body = await res.text();
+          throw new Error(`Brevo API error ${res.status}: ${body}`);
+        }
       },
     }),
     ...(process.env.AUTH_GOOGLE_ID
