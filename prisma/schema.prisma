@@ -58,10 +58,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts    Account[]
-  sessions    Session[]
-  memberships OrgMembership[]
-  invitations Invitation[]    @relation("InvitationCreatedBy")
+  accounts     Account[]
+  sessions     Session[]
+  memberships  OrgMembership[]
+  invitations  Invitation[]   @relation("InvitationCreatedBy")
+  diaryEntries DailyDiary[]   @relation("DiaryCreatedBy")
+  notes        ProjectNote[]  @relation("NoteCreatedBy")
 }
 
 model Organization {
@@ -158,9 +160,47 @@ model Project {
   org           Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
   wbsItems      WbsItem[]
   rateOverrides ProjectRateOverride[]
+  diaryEntries  DailyDiary[]
+  notes         ProjectNote[]
 
   @@index([orgId])
   @@index([status])
+}
+
+model DailyDiary {
+  id            String   @id @default(cuid())
+  projectId     String
+  date          DateTime @db.Date
+  weather       String?
+  manpowerCount Int?
+  progress      String   @db.Text
+  challenges    String?  @db.Text
+  nextDayPlan   String?  @db.Text
+  createdById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("DiaryCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([projectId, date])
+  @@index([projectId])
+}
+
+model ProjectNote {
+  id          String   @id @default(cuid())
+  projectId   String
+  title       String
+  content     String   @db.Text
+  isPinned    Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("NoteCreatedBy", fields: [createdById], references: [id])
+
+  @@index([projectId])
 }
 
 // ── Work Breakdown Structure ──────────────────────────────────────────────────

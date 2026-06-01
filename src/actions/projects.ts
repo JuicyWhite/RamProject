@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { CreateProjectSchema, UpdateProjectSchema } from "@/validations/project";
 import type { CreateProjectInput, UpdateProjectInput } from "@/validations/project";
+import { PROJECT_TEMPLATES, type TemplateWbsItem } from "@/lib/templates";
 
 async function requireOrgAccess(minRole?: "OWNER" | "ESTIMATOR") {
   const session = await auth();
@@ -88,4 +89,46 @@ export async function deleteProject(projectId: string) {
 
 export async function archiveProject(projectId: string) {
   return updateProject(projectId, { status: "ARCHIVED" });
+}
+
+export async function createProjectFromTemplate(
+  input: { name: string; client?: string; location?: string },
+  templateId: string
+) {
+  const { orgId } = await requireOrgAccess("ESTIMATOR");
+
+  const project = await db.project.create({
+    data: { name: input.name, client: input.client, location: input.location, orgId },
+  });
+
+  const template = PROJECT_TEMPLATES.find((t) => t.id === templateId);
+  if (template && template.items.length > 0) {
+    await createTemplateItems(project.id, template.items, null, 0);
+  }
+
+  revalidatePath("/projects");
+  return project;
+}
+
+async function createTemplateItems(
+  projectId: string,
+  items: TemplateWbsItem[],
+  parentId: string | null,
+  startOrder: number
+): Promise<void> {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const created = await db.wbsItem.create({
+      data: {
+        projectId,
+        parentId,
+        description: item.description,
+        isGroup: item.isGroup,
+        sortOrder: startOrder + i,
+      },
+    });
+    if (item.children && item.children.length > 0) {
+      await createTemplateItems(projectId, item.children, created.id, 0);
+    }
+  }
 }

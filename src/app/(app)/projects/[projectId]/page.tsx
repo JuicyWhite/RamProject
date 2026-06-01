@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, FileText, Settings, Calendar, MapPin, User2 } from "lucide-react";
+import { FileText, Settings, Calendar, MapPin, User2, BookOpen, StickyNote } from "lucide-react";
 import type { ProjectStatus } from "@prisma/client";
 
 const statusVariant: Record<ProjectStatus, string> = {
@@ -177,6 +177,18 @@ export default async function ProjectPage({
             label: "Estimate",
             desc: `${project._count.wbsItems} scope items`,
             icon: FileText,
+          },
+          {
+            href: `/projects/${project.id}/diary`,
+            label: "Daily Diary",
+            desc: "Log daily site progress and manpower",
+            icon: BookOpen,
+          },
+          {
+            href: `/projects/${project.id}/notes`,
+            label: "Notes",
+            desc: "Attach notes and important information",
+            icon: StickyNote,
           },
           {
             href: `/projects/${project.id}/settings`,
